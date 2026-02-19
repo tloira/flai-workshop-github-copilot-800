@@ -74,10 +74,11 @@ function Activities() {
           <thead>
             <tr>
               <th scope="col">User</th>
-              <th scope="col">Activity Type</th>
-              <th scope="col">Duration (min)</th>
-              <th scope="col">Distance (km)</th>
-              <th scope="col">Calories</th>
+              <th scope="col">Hero Name</th>
+              <th scope="col">Workout Type</th>
+              <th scope="col">Quantity</th>
+              <th scope="col">Unit</th>
+              <th scope="col">Points</th>
               <th scope="col">Date</th>
             </tr>
           </thead>
@@ -85,19 +86,28 @@ function Activities() {
             {activities.length > 0 ? (
               activities.map((activity, index) => (
                 <tr key={activity.id || index}>
-                  <td><strong>{activity.user_name || activity.user || 'N/A'}</strong></td>
                   <td>
-                    <span className="badge bg-primary">{activity.activity_type || 'N/A'}</span>
+                    <strong>{activity.user_name || 'N/A'}</strong>
                   </td>
-                  <td>{activity.duration || 0}</td>
-                  <td>{activity.distance ? parseFloat(activity.distance).toFixed(2) : 0}</td>
-                  <td><span className="badge bg-success">{activity.calories_burned || 0} cal</span></td>
+                  <td>
+                    <span className="text-muted">{activity.hero_name || 'N/A'}</span>
+                  </td>
+                  <td>
+                    <span className="badge bg-primary">{activity.workout_type || 'N/A'}</span>
+                  </td>
+                  <td>{activity.quantity ? parseFloat(activity.quantity).toFixed(1) : 0}</td>
+                  <td>
+                    <small className="text-muted">{activity.unit || 'N/A'}</small>
+                  </td>
+                  <td>
+                    <span className="badge bg-success">{activity.points || 0} pts</span>
+                  </td>
                   <td>{activity.date ? new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center text-muted py-5">
+                <td colSpan="7" className="text-center text-muted py-5">
                   <div>
                     <i className="bi bi-inbox" style={{fontSize: '3rem'}}></i>
                     <p className="mt-3">No activities found</p>
