@@ -1,43 +1,80 @@
 import React, { useState, useEffect } from 'react';
+import UserEditModal from './UserEditModal';
 
 function Users() {
   const [users, setUsers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-        const apiUrl = codespaceName 
+        const usersUrl = codespaceName 
           ? `https://${codespaceName}-8000.app.github.dev/api/users/`
           : 'http://localhost:8000/api/users/';
         
-        console.log('Fetching users from:', apiUrl);
+        const teamsUrl = codespaceName 
+          ? `https://${codespaceName}-8000.app.github.dev/api/teams/`
+          : 'http://localhost:8000/api/teams/';
         
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        console.log('Fetching users from:', usersUrl);
+        console.log('Fetching teams from:', teamsUrl);
+        
+        // Fetch both users and teams in parallel
+        const [usersResponse, teamsResponse] = await Promise.all([
+          fetch(usersUrl),
+          fetch(teamsUrl)
+        ]);
+        
+        if (!usersResponse.ok) {
+          throw new Error(`HTTP error fetching users! status: ${usersResponse.status}`);
+        }
+        if (!teamsResponse.ok) {
+          throw new Error(`HTTP error fetching teams! status: ${teamsResponse.status}`);
         }
         
-        const data = await response.json();
-        console.log('Users data received:', data);
+        const usersData = await usersResponse.json();
+        const teamsData = await teamsResponse.json();
+        
+        console.log('Users data received:', usersData);
+        console.log('Teams data received:', teamsData);
         
         // Handle both paginated (.results) and plain array responses
-        const usersData = data.results || data;
-        console.log('Processed users:', usersData);
+        const processedUsers = usersData.results || usersData;
+        const processedTeams = teamsData.results || teamsData;
         
-        setUsers(Array.isArray(usersData) ? usersData : []);
+        setUsers(Array.isArray(processedUsers) ? processedUsers : []);
+        setTeams(Array.isArray(processedTeams) ? processedTeams : []);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching users:', err);
+        console.error('Error fetching data:', err);
         setError(err.message);
         setLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []);
+
+  const handleEditClick = (user) => {
+    setEditingUser(user);
+  };
+
+  const handleCloseModal = () => {
+    setEditingUser(null);
+  };
+
+  const handleSaveUser = (updatedUser) => {
+    // Update the user in the local state
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      )
+    );
+  };
 
   if (loading) {
     return (
@@ -90,6 +127,12 @@ function Users() {
                     <i className="bi bi-envelope me-2 text-muted"></i>
                     <small>{user.email || 'N/A'}</small>
                   </div>
+                  {user.team_name && (
+                    <div className="mb-2">
+                      <i className="bi bi-people me-2 text-muted"></i>
+                      <span className="badge bg-info text-dark">{user.team_name}</span>
+                    </div>
+                  )}
                   {(user.first_name || user.last_name) && (
                     <div className="mb-2">
                       <i className="bi bi-person me-2 text-muted"></i>
@@ -130,9 +173,12 @@ function Users() {
                       </span>
                     </div>
                   )}
-                  <button className="btn btn-outline-primary mt-3 w-100">
-                    <i className="bi bi-eye me-2"></i>
-                    View Profile
+                  <button 
+                    className="btn btn-primary mt-3 w-100"
+                    onClick={() => handleEditClick(user)}
+                  >
+                    <i className="bi bi-pencil-square me-2"></i>
+                    Edit Profile
                   </button>
                 </div>
               </div>
@@ -151,6 +197,15 @@ function Users() {
         <div className="mt-3">
           <small className="text-muted">Total users: {users.length}</small>
         </div>
+      )}
+      
+      {editingUser && (
+        <UserEditModal
+          user={editingUser}
+          teams={teams}
+          onClose={handleCloseModal}
+          onSave={handleSaveUser}
+        />
       )}
     </div>
   );
